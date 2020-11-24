@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "spec-version": "1.1",
+    "label": "Pivot"
+  },
+  "configuration-groups": [
+    {
+      "label": "Pivot settings",
+      "properties": [
+        {
+          "widget-type": "keyvalue",
+          "label": "Pivot Columns",
+          "name": "pivotColumns",
+          "widget-attributes": {
+            "showDelimiter": "false",
+            "kv-delimiter": "=",
+            "delimiter": ";"
+          }
+        },
+        {
+          "widget-type": "input-field-selector",
+          "label": "Pivot Rows",
+          "name": "pivotRow"
+        },
+        {
+          "widget-type": "function-dropdown-with-alias",
+          "label": "Aggregates",
+          "name": "aggregates",
+          "widget-attributes": {
+            "placeholders": {
+              "field": "field",
+              "alias": "alias"
+            },
+            "dropdownOptions": [
+              "Avg",
+              "Count",
+              "First",
+              "Last",
+              "Max",
+              "Min",
+              {
+                "label": "Standard Deviation",
+                "value": "Stddev"
+              },
+              "Sum",
+              "Variance",
+              {
+                "label": "Collect List",
+                "value": "CollectList"
+              },
+              {
+                "label": "Collect Set",
+                "value": "CollectSet"
+              },
+              {
+                "label": "Count Distinct",
+                "value": "CountDistinct"
+              },
+              {
+                "label": "Longest String",
+                "value": "LongestString"
+              },
+              {
+                "label": "Shortest String",
+                "value": "ShortestString"
+              },
+              {
+                "label": "Number of Nulls",
+                "value": "CountNulls"
+              },
+              {
+                "label": "Concat",
+                "value": "Concat"
+              },
+              {
+                "label": "Concat Distinct",
+                "value": "ConcatDistinct"
+              },
+              {
+                "label": "Logical AND",
+                "value": "LogicalAnd"
+              },
+              {
+                "label": "Logical OR",
+                "value": "LogicalOr"
+              },
+              {
+                "label": "Sum of squares",
+                "value": "SumOfSquares"
+              },
+              {
+                "label": "Corrected sum of squares",
+                "value": "CorrectedSumOfSquares"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Number of Partitions",
+          "name": "numPartitions"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Default Value",
+          "name": "defaultValue",
+          "widget-attributes": {
+            "placeholder": "The default value to use in case a cell does not contain a value after pivoting. Defaults to null"
+          }
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "Field Aliases",
+          "name": "fieldAliases",
+          "widget-attributes": {
+            "showDelimiter": "false",
+            "kv-delimiter": ":",
+            "delimiter": ","
+          }
+        }
+      ]
+    },
+    {
+      "label" : "Error Handling",
+      "properties" : [
+        {
+          "name": "on-error",
+          "label": "On Error",
+          "widget-type": "radio-group",
+          "widget-attributes": {
+            "layout": "block",
+            "default": "skip-error",
+            "options": [
+              {
+                "id": "skip-error",
+                "label": "Skip error"
+              },
+              {
+                "id": "send-to-error-port",
+                "label": "Send to error port"
+              },
+              {
+                "id": "fail-pipeline",
+                "label": "Fail pipeline"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "emit-alerts": true,
+  "emit-errors": true,
+  "outputs": []
+}
