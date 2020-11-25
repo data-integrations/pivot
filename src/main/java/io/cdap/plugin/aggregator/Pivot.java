@@ -323,7 +323,7 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
     for (String columnName : pivotColumnNames) {
       Object value = record.get(columnName);
       Set<String> dataModels = pivotColumnsAndData.get(columnName);
-      if (!dataModels.contains(value)) {
+      if (!dataModels.contains(String.valueOf(value))) {
         Set<Object> missingDataModels = missingColumnDataModels.get(columnName);
         if (missingDataModels == null) {
           missingDataModels = new HashSet<>();
