@@ -1,0 +1,146 @@
+{
+    "name": "pivot_file_source_sink_example",
+    "description": "Data Pipeline Application",
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.3.0-SNAPSHOT",
+        "scope": "SYSTEM"
+    },
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "file_source",
+                "to": "Pivot"
+            },
+            {
+                "from": "Pivot",
+                "to": "file_sink"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": false,
+        "stages": [
+            {
+                "name": "file_source",
+                "plugin": {
+                    "name": "File",
+                    "type": "batchsource",
+                    "label": "file_source",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "2.5.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "format": "csv",
+                        "skipHeader": "true",
+                        "filenameOnly": "false",
+                        "recursive": "false",
+                        "ignoreNonExistingFolders": "false",
+                        "path": "${inputFile}",
+                        "referenceName": "pivot_file_source",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"Quarter\",\"type\":\"string\"},{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Brand\",\"type\":\"string\"},{\"name\":\"Sales\",\"type\":\"int\"}]}",
+                        "delimiter": ","
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"Quarter\",\"type\":\"string\"},{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Brand\",\"type\":\"string\"},{\"name\":\"Sales\",\"type\":\"int\"}]}"
+                    }
+                ],
+                "id": "file_source",
+                "type": "batchsource",
+                "label": "file_source",
+                "icon": "icon-file"
+            },
+            {
+                "name": "Pivot",
+                "plugin": {
+                    "name": "Pivot",
+                    "type": "batchaggregator",
+                    "label": "Pivot",
+                    "artifact": {
+                        "name": "pivot",
+                        "version": "1.0.0-SNAPSHOT",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "on-error": "skip-error",
+                        "pivotColumns": "Quarter=Q1,Q2,Q3,Q4;Brand=Nike,Reebok,Addidas",
+                        "aggregates": "Sum:Sum(Sales)",
+                        "pivotRow": "Product"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"pivot.typeoutput\",\"fields\":[{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Q1_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Addidas_Sum\",\"type\":[\"int\",\"null\"]}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "file_source",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"Quarter\",\"type\":\"string\"},{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Brand\",\"type\":\"string\"},{\"name\":\"Sales\",\"type\":\"int\"}]}"
+                    }
+                ],
+                "id": "Pivot",
+                "type": "batchaggregator",
+                "label": "Pivot",
+                "icon": "fa-plug"
+            },
+            {
+                "name": "file_sink",
+                "plugin": {
+                    "name": "File",
+                    "type": "batchsink",
+                    "label": "file_sink",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "2.5.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "suffix": "yyyy-MM-dd-HH-mm",
+                        "format": "avro",
+                        "schema": "{\"type\":\"record\",\"name\":\"pivot.typeoutput\",\"fields\":[{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Q1_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Addidas_Sum\",\"type\":[\"int\",\"null\"]}]}",
+                        "path": "${outputDirectory}",
+                        "referenceName": "pivot_file_sink"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"pivot.typeoutput\",\"fields\":[{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Q1_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Addidas_Sum\",\"type\":[\"int\",\"null\"]}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "Pivot",
+                        "schema": "{\"type\":\"record\",\"name\":\"pivot.typeoutput\",\"fields\":[{\"name\":\"Product\",\"type\":\"string\"},{\"name\":\"Q1_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Nike_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Reebok_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q1_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q2_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q3_Addidas_Sum\",\"type\":[\"int\",\"null\"]},{\"name\":\"Q4_Addidas_Sum\",\"type\":[\"int\",\"null\"]}]}"
+                    }
+                ],
+                "id": "file_sink",
+                "type": "batchsink",
+                "label": "file_sink",
+                "icon": "icon-file"
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "spark",
+        "numOfRecordsPreview": 100,
+        "description": "Data Pipeline Application",
+        "maxConcurrentRuns": 1
+    }
+}
