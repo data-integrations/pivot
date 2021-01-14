@@ -226,6 +226,57 @@ public class PivotTest extends HydratorTestBase {
       .build()
   );
 
+  // MIN/MAX with String value per quarter
+  private static final Schema EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA = Schema.recordOf(
+    "minmaxproductperquarter",
+    Schema.Field.of("Product", Schema.of(Schema.Type.STRING)),
+    Schema.Field.of("Q1_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q2_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q3_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q4_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+
+    Schema.Field.of("Q1_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q2_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q3_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q4_max", Schema.nullableOf(Schema.of(Schema.Type.STRING)))
+  );
+
+  List<StructuredRecord> expectedMinMaxProductPerQuarter = ImmutableList.of(
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Shirts")
+      .set("Q1_min", "Nike")
+      .set("Q2_min", null)
+      .set("Q3_min", null)
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", null)
+      .set("Q3_max", null)
+      .set("Q4_max", "Reebok")
+      .build(),
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Shoes")
+      .set("Q1_min", "Nike")
+      .set("Q2_min", "Nike")
+      .set("Q3_min", "Nike")
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", "Reebok")
+      .set("Q3_max", "Reebok")
+      .set("Q4_max", "Reebok")
+      .build(),
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Socks")
+      .set("Q1_min", "Reebok")
+      .set("Q2_min", "Nike")
+      .set("Q3_min", "Nike")
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", "Nike")
+      .set("Q3_max", "Reebok")
+      .set("Q4_max", "Reebok")
+      .build()
+  );
+
   private List<StructuredRecord> stageSetup(Map<String, String> properties) throws Exception {
     String inputDataset = UUID.randomUUID().toString();
     String outputDateset = UUID.randomUUID().toString();
@@ -301,6 +352,24 @@ public class PivotTest extends HydratorTestBase {
 
     Assert.assertEquals(expectedSumOfSalesByBrandPerQuarter.size(), output.size());
     List<String> expected = convertStructuredRecordListToJson(expectedSumOfSalesByBrandPerQuarter);
+    List<String> actual = convertStructuredRecordListToJson(output);
+    Assert.assertEquals(expected, actual);
+  }
+
+  @Test
+  public void testMinMaxFunctionWithStringValue() throws Exception {
+
+    // Config props
+    Map<String, String> properties = new HashMap<>();
+    properties.put("pivotColumns", "Quarter=Q1,Q2,Q3,Q4");
+    properties.put("pivotRow", "Product");
+    properties.put("aggregates", "min: min(Brand),max: max(Brand)");
+
+    // Run pipeline
+    List<StructuredRecord> output = stageSetup(properties);
+
+    Assert.assertEquals(expectedMinMaxProductPerQuarter.size(), output.size());
+    List<String> expected = convertStructuredRecordListToJson(expectedMinMaxProductPerQuarter);
     List<String> actual = convertStructuredRecordListToJson(output);
     Assert.assertEquals(expected, actual);
   }
