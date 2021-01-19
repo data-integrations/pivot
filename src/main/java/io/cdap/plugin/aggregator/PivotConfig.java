@@ -18,6 +18,7 @@ package io.cdap.plugin.aggregator;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
@@ -49,6 +50,7 @@ import io.cdap.plugin.aggregator.function.SumOfSquares;
 import io.cdap.plugin.aggregator.function.Variance;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -88,7 +90,7 @@ public class PivotConfig extends PluginConfig {
 
   @Macro
   @Name(FIELD_NAME_PIVOT_ROW)
-  @Description("Specifies a single field in the input schema. The unique values in this field will become the " +
+  @Description("Specifies fields in the input schema. The unique values in this field will become the " +
     "rows of the output from the Pivot transform.")
   public String pivotRow;
 
@@ -133,12 +135,13 @@ public class PivotConfig extends PluginConfig {
     if (containsMacro()) {
       return;
     }
-    String pivotRow = getPivotRow();
+    Set<String> pivotRows = getPivotRows();
 
-    if (Strings.isNullOrEmpty(pivotRow)) {
-      failureCollector.addFailure("Invalid pivot row property.", "The 'pivotRow' property must be set.")
+    if (pivotRows.isEmpty()) {
+      failureCollector.addFailure("Invalid pivot rows property.", "The 'pivotRows' property must be set.")
         .withConfigProperty(FIELD_NAME_PIVOT_ROW);
     }
+
     Map<String, Set<String>> pivotColumnsAndData = getPivotColumnsAndData(failureCollector);
     getFieldAliases(failureCollector);
     List<FunctionInfo> functionInfos = getAggregates(failureCollector);
@@ -151,9 +154,11 @@ public class PivotConfig extends PluginConfig {
 
     ArrayList<String> orderedColumnsName = new ArrayList<>(pivotColumnsAndData.keySet());
 
-    if (inputSchema.getField(pivotRow) == null) {
-      failureCollector.addFailure(String.format("Pivot row %s is not in inputSchema.", pivotRow), null)
-        .withConfigProperty(FIELD_NAME_PIVOT_ROW);
+    for (String pivotRow : pivotRows) {
+      if (inputSchema.getField(pivotRow) == null) {
+        failureCollector.addFailure(String.format("Pivot row %s is not in inputSchema.", pivotRow), null)
+          .withConfigProperty(FIELD_NAME_PIVOT_ROW);
+      }
     }
 
     if (orderedColumnsName.size() > 2) {
@@ -181,9 +186,9 @@ public class PivotConfig extends PluginConfig {
     failureCollector.getOrThrowException();
   }
 
-  @Nullable
-  public String getPivotRow() {
-    return pivotRow;
+  public Set<String> getPivotRows() {
+    return Strings.isNullOrEmpty(pivotRow) ? Collections.emptySet() : Sets.newHashSet(Splitter.on(",").trimResults()
+                                                                                        .split(pivotRow));
   }
 
   /**
