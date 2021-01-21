@@ -14,7 +14,9 @@
           "widget-attributes": {
             "showDelimiter": "false",
             "kv-delimiter": "=",
-            "delimiter": ";"
+            "delimiter": ";",
+            "key-placeholder": "Field Name",
+            "value-placeholder": "Comma-separated unique values"
           }
         },
         {
