@@ -16,51 +16,37 @@
 
 package io.cdap.plugin.aggregator.function;
 
-import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 
 /**
  * Calculates minimum values of a field in a group.
  */
-public class Min extends NumberFunction<Min> {
-
+public class Min extends CompareFunction<Object, Min> {
   public Min(String fieldName, Schema fieldSchema) {
     super(fieldName, fieldSchema);
   }
 
   @Override
-  public void mergeValue(StructuredRecord record) {
-    combine(record.get(fieldName));
-  }
-
-  @Override
-  public void mergeAggregates(Min otherAgg) {
-    combine(otherAgg.getAggregate());
-  }
-
-  private void combine(Number otherNum) {
-    if (otherNum == null) {
-      return;
+  public Object compare(Object value, Object otherValue) {
+    if (otherValue == null) {
+      return value;
     }
 
-    if (number == null) {
-      number = otherNum;
-      return;
+    if (value == null) {
+      return otherValue;
     }
 
     switch (fieldType) {
       case INT:
-        number = Math.min((Integer) otherNum, (Integer) number);
-        return;
+        return Math.min((Integer) value, (Integer) otherValue);
       case LONG:
-        number = Math.min((Long) otherNum, (Long) number);
-        return;
+        return Math.min((Long) value, (Long) otherValue);
       case FLOAT:
-        number = Math.min((Float) otherNum, (Float) number);
-        return;
+        return Math.min((Float) value, (Float) otherValue);
       case DOUBLE:
-        number = Math.min((Double) otherNum, (Double) number);
-        return;
+        return Math.min((Double) value, (Double) otherValue);
+      case STRING:
+        return ((String) value).compareToIgnoreCase((String) otherValue) < 0 ? value : otherValue;
       default:
         throw new IllegalArgumentException(String.format("Field '%s' is of unsupported non-numeric type '%s'. ",
                                                          fieldName, fieldType));

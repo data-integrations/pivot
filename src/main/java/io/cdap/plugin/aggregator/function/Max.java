@@ -16,51 +16,38 @@
 
 package io.cdap.plugin.aggregator.function;
 
-import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 
 /**
  * Calculates max values of a field in a group.
  */
-public class Max extends NumberFunction<Max> {
+public class Max extends CompareFunction<Object, Max> {
 
   public Max(String fieldName, Schema fieldSchema) {
     super(fieldName, fieldSchema);
   }
 
   @Override
-  public void mergeValue(StructuredRecord record) {
-    combine(record.get(fieldName));
-  }
-
-  @Override
-  public void mergeAggregates(Max otherAgg) {
-    combine(otherAgg.getAggregate());
-  }
-
-  private void combine(Number otherNum) {
-    if (otherNum == null) {
-      return;
+  public Object compare(Object value, Object otherValue) {
+    if (otherValue == null) {
+      return value;
     }
 
-    if (number == null) {
-      number = otherNum;
-      return;
+    if (value == null) {
+      return otherValue;
     }
 
     switch (fieldType) {
       case INT:
-        number = Math.max((Integer) otherNum, (Integer) number);
-        return;
+        return Math.max((Integer) otherValue, (Integer) value);
       case LONG:
-        number = Math.max((Long) otherNum, (Long) number);
-        return;
+        return Math.max((Long) otherValue, (Long) value);
       case FLOAT:
-        number = Math.max((Float) otherNum, (Float) number);
-        return;
+        return Math.max((Float) otherValue, (Float) value);
       case DOUBLE:
-        number = Math.max((Double) otherNum, (Double) number);
-        return;
+        return Math.max((Double) otherValue, (Double) value);
+      case STRING:
+        return ((String) value).compareToIgnoreCase((String) otherValue) > 0 ? value : otherValue;
       default:
         throw new IllegalArgumentException(String.format("Field '%s' is of unsupported non-numeric type '%s'. ",
                                                          fieldName, fieldType));

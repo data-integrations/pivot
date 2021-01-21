@@ -93,7 +93,7 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
     }
 
     init(failureCollector);
-    outputSchema = generateOutputSchema(inputSchema, config.getPivotRow(), functionInfos, columnsProduct);
+    outputSchema = generateOutputSchema(inputSchema, config.getPivotRows(), functionInfos, columnsProduct);
     stageConfigurer.setOutputSchema(outputSchema);
   }
 
@@ -114,25 +114,33 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
   public void initialize(BatchRuntimeContext context) {
     init(context.getFailureCollector());
     if (context.getInputSchema() != null) {
-      outputSchema = generateOutputSchema(context.getInputSchema(), config.getPivotRow(),
+      outputSchema = generateOutputSchema(context.getInputSchema(), config.getPivotRows(),
                                           functionInfos, columnsProduct);
     }
   }
 
   @Override
   public void groupBy(StructuredRecord record, Emitter<StructuredRecord> emitter) {
-    String pivotRowFieldName = config.getPivotRow();
-
-    Schema.Field pivotRowField = record.getSchema().getField(pivotRowFieldName);
-    Object pivotRowValue = record.get(pivotRowFieldName);
-
-    Schema schema = Schema.recordOf("group.pivot.schema",
-                                    Collections.singleton(pivotRowField));
-
+    Schema schema = getGroupKeySchema(record.getSchema());
     StructuredRecord.Builder builder = StructuredRecord.builder(schema);
-    builder.set(pivotRowFieldName, pivotRowValue);
-
+    for (String groupByField : config.getPivotRows()) {
+      builder.set(groupByField, record.get(groupByField));
+    }
     emitter.emit(builder.build());
+  }
+
+  private Schema getGroupKeySchema(Schema inputSchema) {
+    List<Schema.Field> fields = new ArrayList<>();
+    for (String groupByField :config.getPivotRows()) {
+      Schema.Field fieldSchema = inputSchema.getField(groupByField);
+      if (fieldSchema == null) {
+        throw new IllegalArgumentException(String.format(
+          "Cannot group by field '%s' because it does not exist in input schema %s",
+          groupByField, inputSchema));
+      }
+      fields.add(fieldSchema);
+    }
+    return Schema.recordOf("group.pivot.schema", fields);
   }
 
   @Override
@@ -192,7 +200,7 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
     throws Exception {
     if (outputSchema == null) {
       config.validate(groupValue.getInputSchema(), failureCollector);
-      outputSchema = generateOutputSchema(groupValue.getInputSchema(), config.getPivotRow(),
+      outputSchema = generateOutputSchema(groupValue.getInputSchema(), config.getPivotRows(),
                                           functionInfos, columnsProduct);
     }
 
@@ -205,15 +213,15 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
     StructuredRecord.Builder builder = StructuredRecord.builder(this.outputSchema);
     List<Schema.Field> fields = this.outputSchema.getFields();
 
-    String pivotRow = config.getPivotRow();
+    Set<String> pivotRows = config.getPivotRows();
     String defaultValue = config.getDefaultValue();
 
     Map<String, AggregateFunction> functions = groupValue.getFunctions();
 
     for (Schema.Field field : fields) {
       String fieldName = field.getName();
-      if (fieldName.equals(pivotRow)) {
-        builder.set(fieldName, structuredRecord.get(pivotRow));
+      if (pivotRows.contains(fieldName)) {
+        builder.set(fieldName, structuredRecord.get(fieldName));
       } else {
         String functionKey = findAggregationFunctionsKey(fieldName);
         AggregateFunction aggregateFunction = functions.get(functionKey);
@@ -263,12 +271,14 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
     failureCollector.getOrThrowException();
   }
 
-  public Schema generateOutputSchema(Schema inputSchema, String pivotRow, List<PivotConfig.FunctionInfo> aggregates,
-                                     List<String> columnProducts) {
+  public Schema generateOutputSchema(Schema inputSchema, Iterable<String> pivotRows,
+                                     List<PivotConfig.FunctionInfo> aggregates, List<String> columnProducts) {
     List<Schema.Field> fields = new ArrayList<>();
 
-    Schema pivotRowSchema = inputSchema.getField(pivotRow).getSchema();
-    fields.add(Schema.Field.of(pivotRow, pivotRowSchema));
+    for (String pivotRow : pivotRows) {
+      Schema pivotRowSchema = inputSchema.getField(pivotRow).getSchema();
+      fields.add(Schema.Field.of(pivotRow, pivotRowSchema));
+    }
 
     for (PivotConfig.FunctionInfo functionInfo : aggregates) {
       for (String column : columnProducts) {
@@ -294,20 +304,21 @@ public class Pivot extends BatchReducibleAggregator<StructuredRecord, Structured
       return;
     }
     init(context.getFailureCollector());
-    String name = String.format("Pivot %s", config.getPivotRow());
+    Set<String> pivotRows = config.getPivotRows();
+    String name = String.format("Pivot %s", String.join(", ", pivotRows));
     List<String> inputFields = new ArrayList<>(orderedColumnsName);
-    inputFields.add(config.getPivotRow());
+    inputFields.addAll(pivotRows);
 
-    outputSchema = generateOutputSchema(inputSchema, config.getPivotRow(), functionInfos, columnsProduct);
+    outputSchema = generateOutputSchema(inputSchema, pivotRows, functionInfos, columnsProduct);
     List<String> outputFields = outputSchema.getFields()
       .stream().map(Schema.Field::getName).collect(Collectors.toList());
     String aggregates = functionInfos.stream().map(functionInfo -> String.format("%s(%s)", functionInfo.getName(),
                                                                                  functionInfo.getField()))
       .collect(Collectors.joining(", "));
-    String description = String.format("Pivoted the dataset by using the input field %s as the pivot row, and the " +
+    String description = String.format("Pivoted the dataset by using the input field(s) %s as the pivot row, and the " +
                                          "fields %s ​as the pivot columns with %s ​as the aggregate function(s) to" +
                                          " generate the fields %s​.",
-                                       config.getPivotRow(),
+                                       String.join(", ", pivotRows),
                                        orderedColumnsName.stream().collect(Collectors.joining(" and ")),
                                        aggregates,
                                        outputFields.stream().collect(Collectors.joining(","))

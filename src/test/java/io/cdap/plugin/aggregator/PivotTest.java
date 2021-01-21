@@ -176,6 +176,17 @@ public class PivotTest extends HydratorTestBase {
     Schema.Field.of("Q4_total", Schema.nullableOf(Schema.of(Schema.Type.INT)))
   );
 
+  // SUM By Brand and Product per quarter
+  private static final Schema EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA = Schema.recordOf(
+    "sumbybrandandproductperquarter",
+    Schema.Field.of("Brand", Schema.of(Schema.Type.STRING)),
+    Schema.Field.of("Product", Schema.of(Schema.Type.STRING)),
+    Schema.Field.of("Q1_total", Schema.nullableOf(Schema.of(Schema.Type.INT))),
+    Schema.Field.of("Q2_total", Schema.nullableOf(Schema.of(Schema.Type.INT))),
+    Schema.Field.of("Q3_total", Schema.nullableOf(Schema.of(Schema.Type.INT))),
+    Schema.Field.of("Q4_total", Schema.nullableOf(Schema.of(Schema.Type.INT)))
+  );
+
   List<StructuredRecord> expectedSumOfSalesByBrandPerQuarter = ImmutableList.of(
     StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_PER_QUARTER_SCHEMA)
       .set("Brand", "Nike")
@@ -190,6 +201,57 @@ public class PivotTest extends HydratorTestBase {
       .set("Q2_total", 30)
       .set("Q3_total", 70)
       .set("Q4_total", 60)
+      .build()
+  );
+
+  List<StructuredRecord> expectedSumOfSalesByBrandAndProductPerQuarter = ImmutableList.of(
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Nike")
+      .set("Product", "Shirts")
+      .set("Q1_total", 20)
+      .set("Q2_total", null)
+      .set("Q3_total", null)
+      .set("Q4_total", 50)
+      .build(),
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Nike")
+      .set("Product", "Shoes")
+      .set("Q1_total", 50)
+      .set("Q2_total", 20)
+      .set("Q3_total", 50)
+      .set("Q4_total", 40)
+      .build(),
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Nike")
+      .set("Product", "Socks")
+      .set("Q1_total", null)
+      .set("Q2_total", 40)
+      .set("Q3_total", 20)
+      .set("Q4_total", 60)
+      .build(),
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Reebok")
+      .set("Product", "Shirts")
+      .set("Q1_total", 60)
+      .set("Q2_total", null)
+      .set("Q3_total", null)
+      .set("Q4_total", 20)
+      .build(),
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Reebok")
+      .set("Product", "Shoes")
+      .set("Q1_total", 50)
+      .set("Q2_total", 30)
+      .set("Q3_total", 30)
+      .set("Q4_total", 10)
+      .build(),
+    StructuredRecord.builder(EXPECTED_SUM_BY_BRAND_AND_PRODUCT_PER_QUARTER_SCHEMA)
+      .set("Brand", "Reebok")
+      .set("Product", "Socks")
+      .set("Q1_total", 40)
+      .set("Q2_total", null)
+      .set("Q3_total", 40)
+      .set("Q4_total", 30)
       .build()
   );
 
@@ -223,6 +285,57 @@ public class PivotTest extends HydratorTestBase {
       .set("Quarter_2_sum", 0)
       .set("Q3_sum", 0)
       .set("Q4_sum", 70)
+      .build()
+  );
+
+  // MIN/MAX with String value per quarter
+  private static final Schema EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA = Schema.recordOf(
+    "minmaxproductperquarter",
+    Schema.Field.of("Product", Schema.of(Schema.Type.STRING)),
+    Schema.Field.of("Q1_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q2_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q3_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q4_min", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+
+    Schema.Field.of("Q1_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q2_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q3_max", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+    Schema.Field.of("Q4_max", Schema.nullableOf(Schema.of(Schema.Type.STRING)))
+  );
+
+  List<StructuredRecord> expectedMinMaxProductPerQuarter = ImmutableList.of(
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Shirts")
+      .set("Q1_min", "Nike")
+      .set("Q2_min", null)
+      .set("Q3_min", null)
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", null)
+      .set("Q3_max", null)
+      .set("Q4_max", "Reebok")
+      .build(),
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Shoes")
+      .set("Q1_min", "Nike")
+      .set("Q2_min", "Nike")
+      .set("Q3_min", "Nike")
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", "Reebok")
+      .set("Q3_max", "Reebok")
+      .set("Q4_max", "Reebok")
+      .build(),
+    StructuredRecord.builder(EXPECTED_MIN_MAX_BRAND_PER_QUARTER_SCHEMA)
+      .set("Product", "Socks")
+      .set("Q1_min", "Reebok")
+      .set("Q2_min", "Nike")
+      .set("Q3_min", "Nike")
+      .set("Q4_min", "Nike")
+      .set("Q1_max", "Reebok")
+      .set("Q2_max", "Nike")
+      .set("Q3_max", "Reebok")
+      .set("Q4_max", "Reebok")
       .build()
   );
 
@@ -301,6 +414,24 @@ public class PivotTest extends HydratorTestBase {
 
     Assert.assertEquals(expectedSumOfSalesByBrandPerQuarter.size(), output.size());
     List<String> expected = convertStructuredRecordListToJson(expectedSumOfSalesByBrandPerQuarter);
+    List<String> actual = convertStructuredRecordListToJson(output);
+    Assert.assertEquals(expected, actual);
+  }
+
+  @Test
+  public void testMinMaxFunctionWithStringValue() throws Exception {
+
+    // Config props
+    Map<String, String> properties = new HashMap<>();
+    properties.put("pivotColumns", "Quarter=Q1,Q2,Q3,Q4");
+    properties.put("pivotRow", "Product");
+    properties.put("aggregates", "min: min(Brand),max: max(Brand)");
+
+    // Run pipeline
+    List<StructuredRecord> output = stageSetup(properties);
+
+    Assert.assertEquals(expectedMinMaxProductPerQuarter.size(), output.size());
+    List<String> expected = convertStructuredRecordListToJson(expectedMinMaxProductPerQuarter);
     List<String> actual = convertStructuredRecordListToJson(output);
     Assert.assertEquals(expected, actual);
   }
@@ -397,5 +528,22 @@ public class PivotTest extends HydratorTestBase {
       Assert.assertEquals(PivotConfig.FIELD_NAME_AGGREGATES, mockFailureCollector.getValidationFailures()
         .get(0).getCauses().get(0).getAttribute("stageConfig"));
     }
+  }
+
+  @Test
+  public void testSalesSumByBrandAndProductPerQuarter() throws Exception {
+    // Config props
+    Map<String, String> properties = new HashMap<>();
+    properties.put("pivotColumns", "Quarter=Q1,Q2,Q3,Q4");
+    properties.put("pivotRow", "Brand,Product");
+    properties.put("aggregates", "total: sum(Sales)");
+
+    // Run pipeline
+    List<StructuredRecord> output = stageSetup(properties);
+
+    Assert.assertEquals(expectedSumOfSalesByBrandAndProductPerQuarter.size(), output.size());
+    List<String> expected = convertStructuredRecordListToJson(expectedSumOfSalesByBrandAndProductPerQuarter);
+    List<String> actual = convertStructuredRecordListToJson(output);
+    Assert.assertEquals(expected, actual);
   }
 }
