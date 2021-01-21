@@ -22,7 +22,10 @@
         {
           "widget-type": "input-field-selector",
           "label": "Pivot Rows",
-          "name": "pivotRow"
+          "name": "pivotRow",
+          "widget-attributes": {
+            "multiselect" : "true"
+          }
         },
         {
           "widget-type": "function-dropdown-with-alias",
